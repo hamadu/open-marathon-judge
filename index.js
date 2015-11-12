@@ -17,6 +17,8 @@ exports.handler = function(event, context) {
     };
 
     var ReceiptHandle = '';
+    var remoteSolutionPath = '';
+    var remoteGraderPath = '';
 
     async.waterfall([
         function pollMessage(next) {
@@ -36,12 +38,15 @@ exports.handler = function(event, context) {
                 ReceiptHandle = data.Messages[0].ReceiptHandle;
                 var body = JSON.parse(data.Messages[0].Body);
 
-                var remoteSolutionPath = body.MessageAttributes.solution.Value;
-                var remoteGraderPath = body.MessageAttributes.grader.Value;
+                remoteSolutionPath = body.MessageAttributes.solution.Value;
+                remoteGraderPath = body.MessageAttributes.grader.Value;
                 var seed = body.MessageAttributes.seed.Value;
 
-                remoteSolutionPath = 'codes/Solution.jar';
-                remoteGraderPath = 'grader/SmallPolygonsGrader.jar';
+                console.log('remoteSolutionPath', remoteSolutionPath);
+                console.log('remoteGraderPath', remoteGraderPath);
+
+                // remoteSolutionPath = 'codes/Solution.jar';
+                // remoteGraderPath = 'grader/SmallPolygonsGrader.jar';
 
                 s3.getObject({
                     Bucket: 'open-marathon',
@@ -94,9 +99,11 @@ exports.handler = function(event, context) {
             });
         },
         function uploadResult(seed, result, next) {
+            var base = path.dirname(remoteSolutionPath);
+
             s3.putObject({
                 Bucket: 'open-marathon',
-                Key: 'codes/result/#1.txt'.replace('#1', seed),
+                Key: base + '/result/#1.txt'.replace('#1', seed),
                 Body: result
             }, next);
         },
@@ -106,20 +113,20 @@ exports.handler = function(event, context) {
                 ReceiptHandle: ReceiptHandle
             }, function(err, data) {
                 if (!err) {
-                    context.done(err, 'Process complete!!');
+                    next(null);
                 }
             });
-            next(null);
         }
     ], function(err) {
     	  if (err) {
             console.log(err);
+        } else {
+            // lambda.invoke({
+            //     FunctionName: 'executeTestCases',
+            //     InvocationType: 'Event'
+            // }, function(err, data) {
+            //     context.done(err, 'Process complete');
+            // });
         }
-        lambda.invoke({
-            FunctionName: 'executeExternalCode',
-            InvocationType: 'Event'
-        }, function(err, data) {
-            context.done(err, 'Process complete');
-        });
     });
 };
