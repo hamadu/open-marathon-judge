@@ -74,15 +74,15 @@ exports.handler = function(event, context) {
         },
         function saveBinaryToFile(solution, grader, seed, next) {
             fs.writeFileSync('/tmp/Solution.jar', solution.Body);
-            fs.writeFileSync('/tmp/SmallPolygonsGrader.jar', grader.Body);
-            next(null, '/tmp/Solution.jar', '/tmp/SmallPolygonsGrader.jar', seed);
+            fs.writeFileSync('/tmp/Grader.jar', grader.Body);
+            next(null, '/tmp/Solution.jar', '/tmp/Grader.jar', seed);
         },
         function executeSolution(solutionPath, graderPath, seed, next) {
             var execCommand = '';
-            if (true) {
+            if (remoteSolutionPath.indexOf('.jar') >= 0) {
               execCommand = 'java -jar #1'.replace('#1', solutionPath);
             } else {
-              execCommand = 'chmod 700 #1; #1'.replace('#1', solutionPath);
+              execCommand = 'chmod 700 #1; #1'.replace('#1', solutionPath).replace('#1', solutionPath);
             }
             var command = 'java -jar #1 "#2" #3'
                 .replace('#1', graderPath)
